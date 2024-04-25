@@ -13,8 +13,7 @@ using System.Threading;
 using WindowsFormsApp1;
 using thinger.DataConvertLib;
 using System.Timers;
-using ExendControl;
-
+using MiniExcelLibs;
 namespace SerialPortExample
 {
     public partial class MainForm : Form
@@ -40,7 +39,7 @@ namespace SerialPortExample
 
         private void StoreTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            currentTimer = DateTime.Now.ToString("g").Replace("年", "-").Replace("月", "-").Replace("日", " ");
+            currentTimer = DateTime.Now.ToString("D").Replace("年", "-").Replace("月", "-").Replace("日", " ") + DateTime.Now.ToString("t");
 
             Current_Variable = new List<string>(8) { currentTimer, this.textBox_SN.Text, this.text_Read_R.Text, this.text_Read_G.Text, this.text_Read_B.Text, this.text_Read_IR.Text, this.Text, this.lab_OKNG.Text };
         }
@@ -61,11 +60,13 @@ namespace SerialPortExample
         /// </summary>
         private string VariableCsvFlie = Application.StartupPath + "\\Log\\" + DateTime.Now.ToString("yyyy-MM").Replace("年", "-").Replace("月", "-").Replace("日", " ") + "//" + DateTime.Now.ToString("m").Replace("年", "-").Replace("月", "-").Replace("日", " ") + ".csv";
 
-        private string VariablePathFile = Application.StartupPath + "\\Log\\" + DateTime.Now.ToString("yyyy-MM").Replace("年", "-").Replace("月", "-").Replace("日", " ");
+        private string VariablePathFile = null;
 
-        private string Log_Path = Application.StartupPath + "Log";
+        private string Log_Path = Application.StartupPath + "\\Log";
 
         public List<string> Current_Variable = new List<string>(8);
+
+        private string VariablePath = Application.StartupPath + "\\Config\\DeviceConfig.xlsx";
 
 
         private bool OKNG;
@@ -91,14 +92,32 @@ namespace SerialPortExample
 
         private void Initialize()
         {
+            //    查询路径里的xlsx文件转换为list<Variable>类型
+            try
+            {
+                CommandMethod.DeviceConfig = MiniExcel.Query<Variable>(VariablePath).ToList();
+            }
+            catch (Exception)
+            {
+                CommandMethod.DeviceConfig = new List<Variable>();
+            }
+
             string[] PortName = SerialPort.GetPortNames();
             if (PortName.Length > 0)
             {
+                this.cmb_port.Items.Clear();
                 this.cmb_port.Items.AddRange(PortName);
                 this.cmb_port.SelectedIndex = 0;
-                cmb_port.SelectedIndex = 1;
             }
 
+            string[] deviceName = new string[CommandMethod.DeviceConfig.Count];
+            for (int i = 0; i < CommandMethod.DeviceConfig.Count; i++)
+            {
+                deviceName[i] = (CommandMethod.DeviceConfig[i].DeviceName);
+            }
+            this.cmb_Device.Items.Clear();
+            this.cmb_Device.Items.AddRange(deviceName);
+            this.cmb_Device.SelectedIndex = 0;
         }
         /// <summary>
         /// 连接串口
@@ -124,21 +143,21 @@ namespace SerialPortExample
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button2_Click(object sender, EventArgs e)
-        {
-            if (IsOpen)
-            {
-                helper._SerialPort.Close();
-                MessageBox.Show("成功断开");
-                IsOpen = false;
-                return;
-            }
-            else
-            {
-                MessageBox.Show("未连接");
-                return;
-            }
-        }
+        //private void button2_Click(object sender, EventArgs e)
+        //{
+        //    if (IsOpen)
+        //    {
+        //        helper._SerialPort.Close();
+        //        MessageBox.Show("成功断开");
+        //        IsOpen = false;
+        //        return;
+        //    }
+        //    else
+        //    {
+        //        MessageBox.Show("未连接");
+        //        return;
+        //    }
+        //}
         /// <summary>
         /// 读取
         /// </summary>
@@ -147,13 +166,13 @@ namespace SerialPortExample
         private void button3_Click(object sender, EventArgs e)
         {
 
-            if (this.textBox_SN.Text == "" && this.textBox_SN.Text == null)
+            if (this.textBox_SN.Text == "" || this.textBox_SN.Text == null)
             {
-                MessageBox.Show("输入值为null，请检查");
+                MessageBox.Show("SN输入值为空，请检查");
                 return;
             }
 
-                string data = null;
+            string data = null;
             bool IsWrite = helper.WriteRuqire();
             int[] convetlData = null;
             if (IsWrite == false)
@@ -170,7 +189,6 @@ namespace SerialPortExample
                     MessageBox.Show("返回值为null");
                     return;
                 }
-                this.lab_readData.Text = data;
             }
 
             convetlData = helper.ConvertHexStringToByteArray(data);
@@ -199,28 +217,53 @@ namespace SerialPortExample
             }
             Task.Run(new Action(() =>
             {
-                Create_File(convetlData);
+                this.cmb_Device.Invoke(new Action(() =>
+                {
+                    DeviceFile(this.cmb_Device.Text, convetlData);
+                }));
             }));
 
             this.textBox_SN.ForeColor = Color.Gray;
 
-            //  显示1.5秒OK ng
-            WindowsFormsApp1.Monitor Statu = new WindowsFormsApp1.Monitor(OKNG,1000);
+            //  显示1秒OK ng
+            WindowsFormsApp1.Monitor Statu = new WindowsFormsApp1.Monitor(OKNG, 1000);
             Statu.ShowDialog();
+            this.textBox_SN.Text = "";
         }
 
-        private void Create_File(int[] data)
+        public void DeviceFile(string Name, int[] data)
         {
 
-            //  写入日志
+            string Path = Log_Path + $"\\{Name}";
 
-            if (File.Exists(Log_Path))
+            if (!File.Exists(Path))
             {
-                MessageBox.Show("日志文件存放路径不存在，请检查");
-                return;
+                // 设备日志文件夹不存在，创建
+
+                DirectoryInfo Create = null;
+
+                try
+                {
+                    Create = Directory.CreateDirectory(Path);
+                }
+                catch (Exception)
+                {
+                    this.Invoke(new Action(() =>
+                    {
+                        MessageBox.Show("设备日志日志文件夹创建失败，请检查");
+                    }));
+                    return;
+                }
             }
+            Create_File(Path, data);
+        }
+
+        private void Create_File(string Name, int[] data)
+        {
 
             //  检查文件夹是否存在
+
+            VariablePathFile = Name + "\\" + DateTime.Now.ToString("yyyy-MM").Replace("年", "-").Replace("月", "-").Replace("日", " ");
 
             if (!File.Exists(VariablePathFile))
             {
@@ -234,7 +277,10 @@ namespace SerialPortExample
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("当月日志文件夹创建失败，请检查");
+                    this.Invoke(new Action(() =>
+                    {
+                        MessageBox.Show("当月日志文件夹创建失败，请检查");
+                    }));
                     return;
                 }
             }
@@ -248,7 +294,11 @@ namespace SerialPortExample
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("无法写入数据，请检查是否正在打开文件");
+                    this.Invoke(new Action(() =>
+                    {
+                        MessageBox.Show("无法写入数据，请检查是否正在打开文件");
+
+                    }));
                     return;
                 }
 
@@ -257,6 +307,10 @@ namespace SerialPortExample
 
         public void Write_LogCvs(int[] data)
         {
+
+
+            VariableCsvFlie = VariablePathFile + "//" + DateTime.Now.ToString("m").Replace("年", "-").Replace("月", "-").Replace("日", " ") + ".csv";
+
             // 检查文件是否存在
             bool fileExists = File.Exists(VariableCsvFlie);
 
@@ -268,7 +322,7 @@ namespace SerialPortExample
                 if (!fileExists)
                 {
                     // 文件刚创建，写入标题行
-                    sw.WriteLine("Time:,SN:,R:,G:,B:,IR:,ID:,RES:");
+                    sw.WriteLine("Device,Time:,SN:,R:,G:,B:,IR:,ID:,RES:");
                 }
 
                 // 使用Invoke确保线程安全地访问UI控件
@@ -278,33 +332,28 @@ namespace SerialPortExample
                     {
                         // 追加数据到文件
 
-                        sw.WriteLine($"{currentTimer}, {textBox_SN.Text}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
+                        sw.WriteLine($"{this.cmb_Device.Text},{currentTimer}, {textBox_SN.Text.Trim()}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
                     }));
                 }
                 else
                 {
                     // 在UI线程中直接写入
-                    sw.WriteLine($"{currentTimer}, {textBox_SN.Text}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
+                    sw.WriteLine($"{this.cmb_Device.Text},{currentTimer}, {textBox_SN.Text.Trim()}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
                 }
             }
         }
 
 
-        private void but_Default_Click(object sender, EventArgs e)
-        {
-            this.text_CONF1.Text = "0x30";
-            this.text_CONF2.Text = "0x09";
-        }
+        //private void but_Default_Click(object sender, EventArgs e)
+        //{
+        //    this.text_CONF1.Text = "0x30";
+        //    this.text_CONF2.Text = "0x09";
+        //}
 
         private void textBox_SN_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                if (this.textBox_SN.Text == "" && this.textBox_SN.Text == null)
-                {
-                    MessageBox.Show("输入值为null，请检查");
-                    return;
-                }
                 button3_Click(sender, e);
             }
 
@@ -316,62 +365,111 @@ namespace SerialPortExample
             this.textBox_SN.Text = "";
         }
 
-        //public string ModifyValue { get; set; }
-        /// <summary>
-        /// 双击修改变量
-        /// </summary>
-        /// <param name="tag"></param>
-        /// <param name="value"></param>
-        //private void paramSet_RMIN_DoubleClick(object sender, EventArgs e)
-        //{
-        //    if (sender is ParamSet param)
-        //    {
-        //        if (param.limiti != null)
-        //        {
-        //            Modify modify = new Modify(param.limiti);
-
-        //            modify.ShowDialog();
-
-        //            if (modify.DialogResult == DialogResult.OK)
-        //            {
-        //                param.limiti = modify.Modifyvalue;
-        //                findParamSet(param.Tag.ToString(), modify.Modifyvalue);
-        //                //findParamSet1(param.Tag.ToString(), modify.Modifyvalue);
-        //                return;
-        //            }
-        //            MessageBox.Show("密码错误修改失败");
-        //        }
-        //    }
-        //}
         private void findTextLimit()
-        {
-            foreach (var item in this.Controls.OfType<TextBox>())
-            {
-                if (item.Tag!=null)
-                {
-                    item.ReadOnly = false;
-                }
-            }
-        }
-        private void but_EditLimit_Click(object sender, EventArgs e)
-        {
-            Modify modify = new Modify();
-            modify.ShowDialog();
-            if (modify.DialogResult == DialogResult.OK)
-            {
-                findTextLimit();
-            }
-        }
-
-        private void but_Lock_Click(object sender, EventArgs e)
         {
             foreach (var item in this.Controls.OfType<TextBox>())
             {
                 if (item.Tag != null)
                 {
-                    item.ReadOnly = true;
+                    item.ReadOnly = false;
                 }
             }
+        }
+        //private void but_EditLimit_Click(object sender, EventArgs e)
+        //{
+        //    Modify modify = new Modify();
+        //    modify.ShowDialog();
+        //    if (modify.DialogResult == DialogResult.OK)
+        //    {
+        //        findTextLimit();
+        //    }
+        //}
+
+        //private void but_Lock_Click(object sender, EventArgs e)
+        //{
+        //    foreach (var item in this.Controls.OfType<TextBox>())
+        //    {
+        //        if (item.Tag != null)
+        //        {
+        //            item.ReadOnly = true;
+        //        }
+        //    }
+        //}
+
+        private void 编辑配置ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Modify modify = new Modify();
+            if (modify.ShowDialog() == DialogResult.Cancel)
+            {
+                MessageBox.Show("密码错误");
+                return;
+            }
+
+            FrmVariableConfig frmVariableConfig = new FrmVariableConfig();
+            frmVariableConfig.ShowDialog();
+            try
+            {
+                Initialize();
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private void 锁定ToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            this.cmb_Device.Enabled = false;
+            this.cmb_port.Enabled = false;
+            this.button1.Enabled = false;
+            this.button2.Enabled = false;
+        }
+
+        private void 解锁ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Modify modify = new Modify();
+            if (modify.ShowDialog() == DialogResult.Cancel)
+            {
+                MessageBox.Show("密码错误");
+                return;
+            }
+            try
+            {
+                Initialize();
+            }
+            catch (Exception)
+            {
+
+            }
+            this.cmb_Device.Enabled = true;
+            this.cmb_port.Enabled = true;
+            this.button1.Enabled = true;
+            this.button2.Enabled = true;
+        }
+        /// <summary>
+        /// 设备参数配置
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button2_Click(object sender, EventArgs e)
+        {
+
+            var CurrentDeviceConfig = CommandMethod.DeviceConfig.Find(c => c.DeviceName == this.cmb_Device.Text);
+            if (CurrentDeviceConfig != null)
+            {
+                MessageBox.Show("没有该配置名称");
+                return;
+            }
+            this.paramSet_RMIN.Text = CurrentDeviceConfig.RMIN;
+            this.paramSet_RMAX.Text = CurrentDeviceConfig.RMAX;
+            this.paramSet_GMIN.Text = CurrentDeviceConfig.GMIN;
+            this.paramSet_GMAX.Text = CurrentDeviceConfig.GMAX;
+            this.paramSet_BMIN.Text = CurrentDeviceConfig.BMIN;
+            this.paramSet_BMAX.Text = CurrentDeviceConfig.BMAX;
+            this.paramSet_IRMIN.Text = CurrentDeviceConfig.IRMIN;
+            this.paramSet_IRMAX.Text = CurrentDeviceConfig.IRMAX;
+
+
         }
     }
 }
