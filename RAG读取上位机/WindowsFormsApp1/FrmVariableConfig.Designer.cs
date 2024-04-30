@@ -122,7 +122,7 @@
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(47, 16);
             this.label2.TabIndex = 0;
-            this.label2.Text = "RNIX:";
+            this.label2.Text = "RMIN:";
             // 
             // textBox1
             // 
@@ -198,7 +198,7 @@
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(47, 16);
             this.label6.TabIndex = 0;
-            this.label6.Text = "BNIX:";
+            this.label6.Text = "BMIN:";
             // 
             // textBox5
             // 
@@ -273,7 +273,7 @@
             this.dataGridView1.AllowUserToResizeColumns = false;
             this.dataGridView1.AllowUserToResizeRows = false;
             this.dataGridView1.BackgroundColor = System.Drawing.Color.White;
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.DeviceName,
             this.RMIN,
@@ -285,6 +285,7 @@
             this.IRMIN,
             this.IRMAX});
             this.dataGridView1.Location = new System.Drawing.Point(12, 207);
+            this.dataGridView1.MultiSelect = false;
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
             this.dataGridView1.RowTemplate.Height = 23;
@@ -299,7 +300,7 @@
             this.DeviceName.HeaderText = "设备名称";
             this.DeviceName.Name = "DeviceName";
             this.DeviceName.ReadOnly = true;
-            this.DeviceName.Width = 105;
+            this.DeviceName.Width = 115;
             // 
             // RMIN
             // 

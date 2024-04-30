@@ -119,7 +119,7 @@
             this.but_ReadData.Margin = new System.Windows.Forms.Padding(4);
             this.but_ReadData.Name = "but_ReadData";
             this.but_ReadData.Size = new System.Drawing.Size(628, 59);
-            this.but_ReadData.TabIndex = 0;
+            this.but_ReadData.TabIndex = 3;
             this.but_ReadData.Text = "读取数据";
             this.but_ReadData.UseVisualStyleBackColor = true;
             this.but_ReadData.Click += new System.EventHandler(this.button3_Click);
@@ -140,11 +140,11 @@
             // 
             this.textBox_SN.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
             this.textBox_SN.Font = new System.Drawing.Font("宋体", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.textBox_SN.Location = new System.Drawing.Point(127, 174);
+            this.textBox_SN.Location = new System.Drawing.Point(117, 174);
             this.textBox_SN.Margin = new System.Windows.Forms.Padding(4);
             this.textBox_SN.Name = "textBox_SN";
-            this.textBox_SN.Size = new System.Drawing.Size(1206, 35);
-            this.textBox_SN.TabIndex = 4;
+            this.textBox_SN.Size = new System.Drawing.Size(1216, 35);
+            this.textBox_SN.TabIndex = 0;
             this.textBox_SN.Click += new System.EventHandler(this.textBox_SN_Click);
             this.textBox_SN.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBox_SN_KeyDown);
             // 
@@ -560,7 +560,7 @@
             this.cmb_Device.Margin = new System.Windows.Forms.Padding(4);
             this.cmb_Device.Name = "cmb_Device";
             this.cmb_Device.Size = new System.Drawing.Size(158, 24);
-            this.cmb_Device.TabIndex = 1;
+            this.cmb_Device.TabIndex = 2;
             // 
             // label18
             // 

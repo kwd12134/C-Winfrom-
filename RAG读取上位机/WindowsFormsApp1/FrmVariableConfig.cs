@@ -30,6 +30,7 @@ namespace WindowsFormsApp1
                 this.dataGridView1.DataSource = null;
                 this.dataGridView1.DataSource = CommandMethod.DeviceConfig;
                 this.dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
             }
         }
 
@@ -44,7 +45,6 @@ namespace WindowsFormsApp1
             {
                 CommandMethod.DeviceConfig = new List<Variable>();
             }
-
         }
 
         private void dataGridView1_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)

@@ -27,20 +27,19 @@ namespace WindowsFormsApp1
         //[2024-04-15 09:35:40.893]
         //        RX：@FFFF,FFFF,FFFF,FFFF,FFFF#
 
-        public SerialPort _SerialPort;
+        private SerialPort _SerialPort;
 
         public bool IsOpen { get; set; } = false;
 
         public int[] Variableint { get; set; }
 
-        public int SleepTime { get; set; } = 1000;
-        public double ReadTimeout { get; private set; } = 5000;
+        public int SleepTime { get; set; } = 150;
+        public double ReadTimeout { get; private set; } = 1500;
 
         public string Result_data { get; set; }
 
         public bool WriteRuqire()
         {
-
             try
             {
                 //this._SerialPort.Write("@Get_VEML6046_HEX#");/
@@ -110,9 +109,21 @@ namespace WindowsFormsApp1
             return Variableint;
         }
 
-
-
-
+        /// <summary>
+        /// 断开连接
+        /// </summary>
+        public  void DisConncet()
+        {
+            if (_SerialPort.IsOpen)
+            {
+                _SerialPort.Close();
+            }
+        }
+        /// <summary>
+        /// 连接串口
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public bool conncet(string name)
         {
             _SerialPort = new SerialPort(name);
@@ -138,10 +149,6 @@ namespace WindowsFormsApp1
             {
                 return false;
             }
-        }
-        public void disconnect()
-        {
-            _SerialPort.Close();
         }
         /// <summary>
         /// 判断NG或者OK

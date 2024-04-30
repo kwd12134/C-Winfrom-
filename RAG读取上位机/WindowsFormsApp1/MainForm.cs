@@ -68,7 +68,6 @@ namespace SerialPortExample
 
         private string VariablePath = Application.StartupPath + "\\Config\\DeviceConfig.xlsx";
 
-
         private bool OKNG;
         public bool OK_NG
         {
@@ -89,7 +88,7 @@ namespace SerialPortExample
             }
         }
 
-
+        #region 查询路径里的xlsx文件转换为list<Variable>类型
         private void Initialize()
         {
             //    查询路径里的xlsx文件转换为list<Variable>类型
@@ -117,8 +116,10 @@ namespace SerialPortExample
             }
             this.cmb_Device.Items.Clear();
             this.cmb_Device.Items.AddRange(deviceName);
-            this.cmb_Device.SelectedIndex = 0;
         }
+        #endregion
+
+        #region 连接串口
         /// <summary>
         /// 连接串口
         /// </summary>
@@ -126,46 +127,34 @@ namespace SerialPortExample
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
+
+            if (IsOpen)
+            {
+                MessageBox.Show("断开连接");
+                this.button1.Text = "连接";
+                helper.DisConncet();
+                IsOpen = false;
+                return;
+            }
+
             IsOpen = helper.conncet(this.cmb_port.Text);
             if (IsOpen)
             {
                 MessageBox.Show("连接成功");
-                return;
-            }
-            else
-            {
-                MessageBox.Show("连接失败");
+                this.button1.Text = "连接中";
                 return;
             }
         }
-        /// <summary>
-        /// 断开串口
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        //private void button2_Click(object sender, EventArgs e)
-        //{
-        //    if (IsOpen)
-        //    {
-        //        helper._SerialPort.Close();
-        //        MessageBox.Show("成功断开");
-        //        IsOpen = false;
-        //        return;
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("未连接");
-        //        return;
-        //    }
-        //}
-        /// <summary>
-        /// 读取
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        #endregion
+
+        #region 读取数据并显示
         private void button3_Click(object sender, EventArgs e)
         {
-
+            if (!IsOpen)
+            {
+                MessageBox.Show("设备未连接，请检查");
+                return;
+            }
             if (this.textBox_SN.Text == "" || this.textBox_SN.Text == null)
             {
                 MessageBox.Show("SN输入值为空，请检查");
@@ -230,7 +219,9 @@ namespace SerialPortExample
             Statu.ShowDialog();
             this.textBox_SN.Text = "";
         }
+        #endregion
 
+        #region 创建文件夹与CSV文件存储数据
         public void DeviceFile(string Name, int[] data)
         {
 
@@ -255,61 +246,63 @@ namespace SerialPortExample
                     return;
                 }
             }
-            Create_File(Path, data);
+            Write_LogCvs(Path, data);
         }
+        /// <summary>
+        /// 创建当月文件夹
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <param name="data"></param>
+        //private void Create_File(string Name, int[] data)
+        //{
 
-        private void Create_File(string Name, int[] data)
+        //    //  检查文件夹是否存在
+
+        //    VariablePathFile = Name + "\\" + DateTime.Now.ToString("yyyy:MM:d").Replace("年", "-").Replace("月", "-").Replace("日", " ");
+
+        //    if (!File.Exists(VariablePathFile))
+        //    {
+        //        // 当月日志文件夹不存在，创建
+
+        //        DirectoryInfo Create = null;
+
+        //        try
+        //        {
+        //            Create = Directory.CreateDirectory(VariablePathFile);
+        //        }
+        //        catch (Exception)
+        //        {
+        //            this.Invoke(new Action(() =>
+        //            {
+        //                MessageBox.Show("当月日志文件夹创建失败，请检查");
+        //            }));
+        //            return;
+        //        }
+        //    }
+        //    // 文件存在，读取或者写入日志内容，判断日志是否创建
+
+        //    Task.Run(new Action(() =>
+        //    {
+        //        try
+        //        {
+        //            Write_LogCvs(data);
+        //        }
+        //        catch (Exception)
+        //        {
+        //            this.Invoke(new Action(() =>
+        //            {
+        //                MessageBox.Show("无法写入数据，请检查是否正在打开文件");
+
+        //            }));
+        //            return;
+        //        }
+
+        //    }));
+        //}
+
+        public void Write_LogCvs(string Name, int[] data)
         {
-
-            //  检查文件夹是否存在
-
-            VariablePathFile = Name + "\\" + DateTime.Now.ToString("yyyy-MM").Replace("年", "-").Replace("月", "-").Replace("日", " ");
-
-            if (!File.Exists(VariablePathFile))
-            {
-                // 当月日志文件夹不存在，创建
-
-                DirectoryInfo Create = null;
-
-                try
-                {
-                    Create = Directory.CreateDirectory(VariablePathFile);
-                }
-                catch (Exception)
-                {
-                    this.Invoke(new Action(() =>
-                    {
-                        MessageBox.Show("当月日志文件夹创建失败，请检查");
-                    }));
-                    return;
-                }
-            }
-            // 文件存在，读取或者写入日志内容，判断日志是否创建
-
-            Task.Run(new Action(() =>
-            {
-                try
-                {
-                    Write_LogCvs(data);
-                }
-                catch (Exception)
-                {
-                    this.Invoke(new Action(() =>
-                    {
-                        MessageBox.Show("无法写入数据，请检查是否正在打开文件");
-
-                    }));
-                    return;
-                }
-
-            }));
-        }
-
-        public void Write_LogCvs(int[] data)
-        {
-
-
-            VariableCsvFlie = VariablePathFile + "//" + DateTime.Now.ToString("m").Replace("年", "-").Replace("月", "-").Replace("日", " ") + ".csv";
+            VariableCsvFlie = Name + "//" + DateTime.Now.ToString("yyyy:MM:d").Replace("年", "-").Replace("月", "-").Replace("日", " ").Replace(":", "-") + ".csv";
 
             // 检查文件是否存在
             bool fileExists = File.Exists(VariableCsvFlie);
@@ -332,24 +325,19 @@ namespace SerialPortExample
                     {
                         // 追加数据到文件
 
-                        sw.WriteLine($"{this.cmb_Device.Text},{currentTimer}, {textBox_SN.Text.Trim()}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
+                        sw.WriteLine($"{this.cmb_Device.Text},{currentTimer},{"'" + textBox_SN.Text.Trim()}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}".Trim());
                     }));
                 }
                 else
                 {
                     // 在UI线程中直接写入
-                    sw.WriteLine($"{this.cmb_Device.Text},{currentTimer}, {textBox_SN.Text.Trim()}, {data[0]}, {data[1]}, {data[2]}, {data[03]}, {data[4]}, {getStatus(OKNG)}");
+                    sw.WriteLine($"{this.cmb_Device.Text},{currentTimer},{"'" + textBox_SN.Text.Trim()},{data[0]},{data[1]},{data[2]},{data[03]},{data[4]},{getStatus(OKNG)}".Trim());
                 }
             }
         }
+        #endregion
 
-
-        //private void but_Default_Click(object sender, EventArgs e)
-        //{
-        //    this.text_CONF1.Text = "0x30";
-        //    this.text_CONF2.Text = "0x09";
-        //}
-
+        #region 设置SN内容
         private void textBox_SN_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -363,7 +351,9 @@ namespace SerialPortExample
             this.textBox_SN.ForeColor = Color.Black;
             this.textBox_SN.Text = "";
         }
+        #endregion
 
+        #region 通用遍历查找窗体控件
         private void findTextLimit()
         {
             foreach (var item in this.Controls.OfType<TextBox>())
@@ -374,27 +364,10 @@ namespace SerialPortExample
                 }
             }
         }
-        //private void but_EditLimit_Click(object sender, EventArgs e)
-        //{
-        //    Modify modify = new Modify();
-        //    modify.ShowDialog();
-        //    if (modify.DialogResult == DialogResult.OK)
-        //    {
-        //        findTextLimit();
-        //    }
-        //}
 
-        //private void but_Lock_Click(object sender, EventArgs e)
-        //{
-        //    foreach (var item in this.Controls.OfType<TextBox>())
-        //    {
-        //        if (item.Tag != null)
-        //        {
-        //            item.ReadOnly = true;
-        //        }
-        //    }
-        //}
+        #endregion
 
+        #region 编辑配置
         private void 编辑配置ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Modify modify = new Modify();
@@ -412,9 +385,11 @@ namespace SerialPortExample
             }
             catch (Exception)
             {
-
+                MessageBox.Show("修改配置文件加载失败");
             }
         }
+        #endregion
+
 
         private void 锁定ToolStripMenuItem1_Click(object sender, EventArgs e)
         {
@@ -438,7 +413,8 @@ namespace SerialPortExample
             }
             catch (Exception)
             {
-
+                MessageBox.Show("修改配置文件加载失败");
+                return;
             }
             this.cmb_Device.Enabled = true;
             this.cmb_port.Enabled = true;
@@ -454,7 +430,7 @@ namespace SerialPortExample
         {
 
             var CurrentDeviceConfig = CommandMethod.DeviceConfig.Find(c => c.DeviceName == this.cmb_Device.Text);
-            if (CurrentDeviceConfig != null)
+            if (CurrentDeviceConfig == null)
             {
                 MessageBox.Show("没有该配置名称");
                 return;
@@ -467,8 +443,6 @@ namespace SerialPortExample
             this.paramSet_BMAX.Text = CurrentDeviceConfig.BMAX;
             this.paramSet_IRMIN.Text = CurrentDeviceConfig.IRMIN;
             this.paramSet_IRMAX.Text = CurrentDeviceConfig.IRMAX;
-
-
         }
     }
 }

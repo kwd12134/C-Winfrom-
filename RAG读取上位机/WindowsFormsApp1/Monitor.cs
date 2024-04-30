@@ -36,6 +36,18 @@ namespace WindowsFormsApp1
             storeTimer.Start();
         }
 
+        #region 减少闪烁
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams parss = base.CreateParams;
+                parss.ExStyle |= 0x02000000;
+                return parss;
+            }
+        }
+        #endregion
+
         private void StoreTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             // 使用Invoke确保线程安全地访问UI控件
