@@ -356,7 +356,6 @@ namespace SerialPortExample
             {
                 button3_Click(sender, e);
             }
-
         }
 
         private void textBox_SN_Click(object sender, EventArgs e)
